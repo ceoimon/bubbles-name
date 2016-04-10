@@ -477,8 +477,11 @@
           lineardistance
         } = Vector.calculate2DDistances(this.mousePos, point.curPos)
 
-        point.targetPos.x = lineardistance < CONFIG.radius ? point.curPos.x - distanceX : point.originalPos.x
-        point.targetPos.y = lineardistance < CONFIG.radius ? point.curPos.y - distanceY : point.originalPos.y
+        // When mouse is initial position, don't motion the bubbles.
+        const isOutside = (this.mousePos.x === 0) && (this.mousePos.y === 0)
+
+        point.targetPos.x = (lineardistance < CONFIG.radius) && (!isOutside) ? point.curPos.x - distanceX : point.originalPos.x
+        point.targetPos.y = lineardistance < CONFIG.radius && (!isOutside) ? point.curPos.y - distanceY : point.originalPos.y
 
         /**
         * Add more shake effect to point.(I don't think this is necessary)
@@ -593,8 +596,9 @@
       this.bounceBubbles = this.bounceBubbles.bind(this)
       this.getOffset = this.getOffset.bind(this)
       this.onMove = this.onMove.bind(this)
+      this.onClick = this.onClick.bind(this)
       this.onTouchMove = this.onTouchMove.bind(this)
-      this.onTouchStart = this.onTouchStart.bind(this)
+      this.onTouchEnd = this.onTouchEnd.bind(this)
       this.onMouseLeave = this.onMouseLeave.bind(this)
       this.onMouseEnter = this.onMouseEnter.bind(this)
       this.draw = this.draw.bind(this)
@@ -606,11 +610,12 @@
       this.updateCanvasDimensions()
       this.canvas.addEventListener('mousemove', this.onMove)
       if (_is_mobile) {
-        this.canvas.addEventListener('touchstart', this.onTouchStart)
+        this.canvas.addEventListener('click', this.onClick)
         this.canvas.addEventListener('touchmove', this.onTouchMove)
+        this.canvas.addEventListener('touchend', this.onTouchEnd)
       }
-      window.addEventListener('mouseleave', this.onMouseLeave)
-      window.addEventListener('mouseenter', this.onMouseEnter)
+      this.canvas.addEventListener('mouseleave', this.onMouseLeave)
+      this.canvas.addEventListener('mouseenter', this.onMouseEnter)
       this.bounceBubbles()
     }
 
@@ -633,6 +638,30 @@
     }
 
     /**
+     * Get total scroll distance.
+     * @param {node} element - The element.
+     * @return {Object} contain scroll left and scroll top
+     */
+    getScroll (element) {
+      let parent = element.parentNode
+      let scrollLeft = 0
+      let scrollTop = 0
+      while (parent !== window.document.body) {
+        if (parent.scrollLeft !== 0) {
+          scrollLeft += parent.scrollLeft
+        }
+        if (parent.scrollTop !== 0) {
+          scrollTop += parent.scrollTop
+        }
+        parent = parent.parentNode
+      }
+      return {
+        scrollLeft,
+        scrollTop
+      }
+    }
+
+    /**
      * Get offset from document to element.
      * @param {node} element - The element.
      * @return {Object} contain offset left and offset top
@@ -642,15 +671,20 @@
         offsetLeft,
         offsetTop
       } = this.getOffset(this.canvas)
-      this.pointCollection.mousePos.set(e.pageX - offsetLeft, e.pageY - offsetTop)
+      const {
+        scrollLeft,
+        scrollTop
+      } = this.getScroll(this.canvas)
+      this.pointCollection.mousePos.set(e.pageX - offsetLeft + scrollLeft, e.pageY - offsetTop + scrollTop)
     }
 
     /**
-     * Prevent the default touch action.
+     * Prevent the default click action.
      * @param {Object} e - The event object.
      */
-    onTouchStart (e) {
+    onClick (e) {
       e.preventDefault()
+      e.stopPropagation()
     }
 
     /**
@@ -665,9 +699,20 @@
           offsetLeft,
           offsetTop
         } = this.getOffset(this.canvas)
+        const {
+          scrollLeft,
+          scrollTop
+        } = this.getScroll(this.canvas)
         const touch = e.targetTouches[0]
-        this.pointCollection.mousePos.set(touch.pageX - offsetLeft, touch.pageY - offsetTop)
+        this.pointCollection.mousePos.set(touch.pageX - offsetLeft + scrollLeft, touch.pageY - offsetTop + scrollTop)
       }
+    }
+
+    /**
+     * Reset mouse position.
+     */
+    onTouchEnd (e) {
+      this.pointCollection.mousePos.set(0, 0)
     }
 
     // Reset the canvas when mouse leave the window.

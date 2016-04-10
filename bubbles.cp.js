@@ -520,9 +520,12 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
           var distanceY = _Vector$calculate2DDi.distanceY;
           var lineardistance = _Vector$calculate2DDi.lineardistance;
 
+          // When mouse is initial position, don't motion the bubbles.
 
-          point.targetPos.x = lineardistance < CONFIG.radius ? point.curPos.x - distanceX : point.originalPos.x;
-          point.targetPos.y = lineardistance < CONFIG.radius ? point.curPos.y - distanceY : point.originalPos.y;
+          var isOutside = _this.mousePos.x === 0 && _this.mousePos.y === 0;
+
+          point.targetPos.x = lineardistance < CONFIG.radius && !isOutside ? point.curPos.x - distanceX : point.originalPos.x;
+          point.targetPos.y = lineardistance < CONFIG.radius && !isOutside ? point.curPos.y - distanceY : point.originalPos.y;
 
           /**
           * Add more shake effect to point.(I don't think this is necessary)
@@ -671,8 +674,9 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
       this.bounceBubbles = this.bounceBubbles.bind(this);
       this.getOffset = this.getOffset.bind(this);
       this.onMove = this.onMove.bind(this);
+      this.onClick = this.onClick.bind(this);
       this.onTouchMove = this.onTouchMove.bind(this);
-      this.onTouchStart = this.onTouchStart.bind(this);
+      this.onTouchEnd = this.onTouchEnd.bind(this);
       this.onMouseLeave = this.onMouseLeave.bind(this);
       this.onMouseEnter = this.onMouseEnter.bind(this);
       this.draw = this.draw.bind(this);
@@ -688,11 +692,12 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         this.updateCanvasDimensions();
         this.canvas.addEventListener('mousemove', this.onMove);
         if (_is_mobile) {
-          this.canvas.addEventListener('touchstart', this.onTouchStart);
+          this.canvas.addEventListener('click', this.onClick);
           this.canvas.addEventListener('touchmove', this.onTouchMove);
+          this.canvas.addEventListener('touchend', this.onTouchEnd);
         }
-        window.addEventListener('mouseleave', this.onMouseLeave);
-        window.addEventListener('mouseenter', this.onMouseEnter);
+        this.canvas.addEventListener('mouseleave', this.onMouseLeave);
+        this.canvas.addEventListener('mouseenter', this.onMouseEnter);
         this.bounceBubbles();
       }
 
@@ -718,6 +723,33 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
       }
 
       /**
+       * Get total scroll distance.
+       * @param {node} element - The element.
+       * @return {Object} contain scroll left and scroll top
+       */
+
+    }, {
+      key: 'getScroll',
+      value: function getScroll(element) {
+        var parent = element.parentNode;
+        var scrollLeft = 0;
+        var scrollTop = 0;
+        while (parent !== window.document.body) {
+          if (parent.scrollLeft !== 0) {
+            scrollLeft += parent.scrollLeft;
+          }
+          if (parent.scrollTop !== 0) {
+            scrollTop += parent.scrollTop;
+          }
+          parent = parent.parentNode;
+        }
+        return {
+          scrollLeft: scrollLeft,
+          scrollTop: scrollTop
+        };
+      }
+
+      /**
        * Get offset from document to element.
        * @param {node} element - The element.
        * @return {Object} contain offset left and offset top
@@ -731,18 +763,24 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         var offsetLeft = _getOffset.offsetLeft;
         var offsetTop = _getOffset.offsetTop;
 
-        this.pointCollection.mousePos.set(e.pageX - offsetLeft, e.pageY - offsetTop);
+        var _getScroll = this.getScroll(this.canvas);
+
+        var scrollLeft = _getScroll.scrollLeft;
+        var scrollTop = _getScroll.scrollTop;
+
+        this.pointCollection.mousePos.set(e.pageX - offsetLeft + scrollLeft, e.pageY - offsetTop + scrollTop);
       }
 
       /**
-       * Prevent the default touch action.
+       * Prevent the default click action.
        * @param {Object} e - The event object.
        */
 
     }, {
-      key: 'onTouchStart',
-      value: function onTouchStart(e) {
+      key: 'onClick',
+      value: function onClick(e) {
         e.preventDefault();
+        e.stopPropagation();
       }
 
       /**
@@ -762,9 +800,24 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
           var offsetLeft = _getOffset2.offsetLeft;
           var offsetTop = _getOffset2.offsetTop;
 
+          var _getScroll2 = this.getScroll(this.canvas);
+
+          var scrollLeft = _getScroll2.scrollLeft;
+          var scrollTop = _getScroll2.scrollTop;
+
           var touch = e.targetTouches[0];
-          this.pointCollection.mousePos.set(touch.pageX - offsetLeft, touch.pageY - offsetTop);
+          this.pointCollection.mousePos.set(touch.pageX - offsetLeft + scrollLeft, touch.pageY - offsetTop + scrollTop);
         }
+      }
+
+      /**
+       * Reset mouse position.
+       */
+
+    }, {
+      key: 'onTouchEnd',
+      value: function onTouchEnd(e) {
+        this.pointCollection.mousePos.set(0, 0);
       }
 
       // Reset the canvas when mouse leave the window.
