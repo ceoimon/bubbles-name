@@ -1,38 +1,26 @@
 # bubbles-name
-[![js-standard-style](https://cdn.rawgit.com/feross/standard/master/badge.svg)](https://github.com/feross/standard)
+[![js-standard-style](https://img.shields.io/badge/code_style-standard-brightgreen.svg)](https://github.com/feross/standard)
 
 Using ES6 refactored the bubbles.js from codecademy course - "Animate Your Name".
 
 Source: http://s3.amazonaws.com/codecademy-content/courses/hour-of-code/js/bubbles.js
 
-Usage
--------
-Using [UMD](https://github.com/umdjs/umd) to made it works in Node, AMD and browser globals.
+## Usage
 
-**Note:** you must create a canvas element in your HTML.
-### Configuration
-
-First, you must configured a ES6 environment.
-Or using compiler like [babel](http://babeljs.io/) to compile it.
-Or use `bubbles.cp.js` which is a compiled version.
-
-#### Node
+### ES6 Module
 1. Put it in your project.
 2. Import it using `import bubblesName from 'path/to/file'`
 3. Use `bubblesName.drawName(...)`
 
-#### AMD
-1. Put it in your project.
-2. Import it using `require([..., 'path/to/file'], ...)`
-3. Use `drawName(...)`
-
-#### Global
+### UMD
 1. Put it in your project.
 2. Import it using `<script type="text/javascript" src="path/to/file"></script>`
 3. Use `ceoimon.drawName(...)`
 
-### API
-#### `drawString(opts)`
+## API
+
+### `drawString(opts)`
+
 `opts` is a Object:
 ```js
 const opts = {
@@ -44,9 +32,11 @@ const opts = {
   colors = Colors // a 2D array
 }
 ```
+
 Except the `colors` property, you must pass a Object contain those property with exactly same name.
 
 `colors` is a 2D array make of like:
+
 ```js
 const Colors = [ // hsl([hue, saturation, lightness]) format
   [0, 100, 63], // red
@@ -57,5 +47,5 @@ const Colors = [ // hsl([hue, saturation, lightness]) format
 ]
 ```
 ## License
--------
-MIT. Copyright (c) [ceoimon](http://ceoimon.com).
+
+MIT.
